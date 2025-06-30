@@ -5,6 +5,7 @@ import * as path from "path";
 import { deflate } from "pako";
 import { getDownloadPath } from "../utils/file.js";
 import { MermaidUrls } from "../utils/config.js";
+import { fromUint8Array } from "js-base64";
 
 export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
   name: "create-mermaid-diagram",
@@ -91,16 +92,11 @@ export function validateFormat(format: string): void {
   }
 }
 
-// Unified encoding for both Mermaid Live and Mermaid Ink - uses full Mermaid Live state JSON + pako compression + base64url
-function encodeMermaidDiagram(diagram: string): string {
-  const json = JSON.stringify({ code: diagram }, undefined, 0);
-  const compressed = deflate(json, { level: 9, raw: false });
-  const b64url = Buffer.from(compressed)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-  return "pako:" + b64url;
+export function encodeMermaidDiagram(diagram: string): string {
+  const json = JSON.stringify({ code: diagram });
+  const bytes = new TextEncoder().encode(json);
+  const zlib = deflate(bytes, { level: 9 });
+  return fromUint8Array(zlib, true);
 }
 
 function buildImageUrl(
