@@ -39,7 +39,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "docs/README.md",
+    "docs/README_ja.md"
   ],
   "engines": {
     "node": ">=20.0.0"
