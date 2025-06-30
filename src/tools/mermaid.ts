@@ -2,6 +2,7 @@ import { Tool, McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
+import { deflate } from "pako";
 import { getDownloadPath } from "../utils/file.js";
 import { MermaidUrls } from "../utils/config.js";
 
@@ -90,9 +91,10 @@ export function validateFormat(format: string): void {
   }
 }
 
-// Unified encoding for both Mermaid Ink and Mermaid Live - services handle pako compression
+// Unified encoding for both Mermaid Live and Mermaid Ink - uses pako compression + base64url
 function encodeMermaidDiagram(diagram: string): string {
-  return Buffer.from(diagram, "utf8").toString("base64url");
+  const compressed = deflate(diagram, { level: 9 });
+  return Buffer.from(compressed).toString("base64url");
 }
 
 function buildImageUrl(
