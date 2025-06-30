@@ -187,6 +187,7 @@ Mermaid 図表を作成 - 編集/表示/ダウンロード用の URL 取得ま�
 ## Mermaid 図表の例
 
 ### フローチャート
+
 ```mermaid
 flowchart TD
     A[クリスマス] -->|お金をもらう| B(ショッピングに行く)
@@ -197,6 +198,7 @@ flowchart TD
 ```
 
 ### シーケンス図
+
 ```mermaid
 sequenceDiagram
     participant Alice
@@ -212,6 +214,7 @@ sequenceDiagram
 ```
 
 ### クラス図
+
 ```mermaid
 classDiagram
     Animal <|-- Duck
@@ -229,6 +232,7 @@ classDiagram
 ```
 
 ### 状態図
+
 ```mermaid
 stateDiagram-v2
     [*] --> 静止
@@ -240,6 +244,7 @@ stateDiagram-v2
 ```
 
 ### エンティティ関係図
+
 ```mermaid
 erDiagram
     CUSTOMER ||--o{ ORDER : 注文する
@@ -399,6 +404,9 @@ mermaid-live-mcp-server/
 │       └── npm-publish.yml   # NPM公開ワークフロー
 ├── scripts/
 │   └── release.sh        # リリース自動化スクリプト
+├── docs/
+│   ├── README.md         # 英語版ドキュメント
+│   └── README_ja.md      # このファイル
 └── .gitignore            # Gitの無視ファイル
 ```
 
