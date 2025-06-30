@@ -303,7 +303,6 @@ erDiagram
    - [https://www.npmjs.com/settings/tokens](https://www.npmjs.com/settings/tokens) にアクセス
    - "Generate New Token"をクリック
    - "Automation"を選択（CI/CD 使用のため）
-   - "Publish"権限レベルを選択
    - 生成されたトークンをコピー（`npm_`で始まる）
 
 ### 2. GitHub リポジトリにトークンを追加
