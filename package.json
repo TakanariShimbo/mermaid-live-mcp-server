@@ -1,5 +1,5 @@
 {
-  "name": "mermaid-live-mcp-server",
+  "name": "@takanarishimbo/mermaid-live-mcp-server",
   "version": "0.1.1",
   "description": "A Model Context Protocol server for generating Mermaid diagrams using Mermaid Live and Mermaid Ink",
   "main": "dist/index.js",
