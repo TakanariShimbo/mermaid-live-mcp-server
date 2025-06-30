@@ -2,7 +2,7 @@
   "dxt_version": "0.1",
   "name": "@takanarishimbo/mermaid-live-mcp-server",
   "display_name": "mermaid",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Model Context Protocol server for generating Mermaid diagrams using Mermaid Live and Mermaid Ink",
   "long_description": "This Model Context Protocol (MCP) server provides powerful diagram creation tools using Mermaid Live and Mermaid Ink services. With this MCP, AI assistants can create flowcharts, sequence diagrams, class diagrams, and other Mermaid visualizations.",
   "author": {
