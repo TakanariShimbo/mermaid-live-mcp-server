@@ -41,7 +41,7 @@ export const MermaidEndpoints = {
   // Mermaid Live endpoints
   EDIT: "/edit",
   VIEW: "/view",
-  
+
   // Mermaid Ink endpoints
   IMAGE: "/img",
   SVG: "/svg",
@@ -53,13 +53,18 @@ export const MermaidEndpoints = {
  */
 export const MermaidUrls = {
   // Mermaid Live URLs
-  edit: (compressed: string) => `${getMermaidLiveBase()}${MermaidEndpoints.EDIT}#pako:${compressed}`,
-  view: (compressed: string) => `${getMermaidLiveBase()}${MermaidEndpoints.VIEW}#pako:${compressed}`,
-  
+  edit: (compressed: string) =>
+    `${getMermaidLiveBase()}${MermaidEndpoints.EDIT}#pako:${compressed}`,
+  view: (compressed: string) =>
+    `${getMermaidLiveBase()}${MermaidEndpoints.VIEW}#pako:${compressed}`,
+
   // Mermaid Ink URLs
-  image: (compressed: string) => `${getMermaidInkBase()}${MermaidEndpoints.IMAGE}/${compressed}`,
-  svg: (compressed: string) => `${getMermaidInkBase()}${MermaidEndpoints.SVG}/${compressed}`,
-  pdf: (compressed: string) => `${getMermaidInkBase()}${MermaidEndpoints.PDF}/${compressed}`,
+  image: (compressed: string) =>
+    `${getMermaidInkBase()}${MermaidEndpoints.IMAGE}/pako:${compressed}`,
+  svg: (compressed: string) =>
+    `${getMermaidInkBase()}${MermaidEndpoints.SVG}/pako:${compressed}`,
+  pdf: (compressed: string) =>
+    `${getMermaidInkBase()}${MermaidEndpoints.PDF}/pako:${compressed}`,
 } as const;
 
 /**

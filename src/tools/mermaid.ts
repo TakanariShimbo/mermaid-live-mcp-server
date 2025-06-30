@@ -90,13 +90,8 @@ export function validateFormat(format: string): void {
   }
 }
 
-// Encoding for Mermaid Ink (image generation service) - uses simple base64
-function encodeMermaidInk(diagram: string): string {
-  return Buffer.from(diagram, 'utf8').toString('base64');
-}
-
-// Encoding for Mermaid Live (editor) - uses pako compression + base64url
-function encodeMermaidLive(diagram: string): string {
+// Unified encoding for both Mermaid Ink and Mermaid Live - uses pako compression + base64url
+function encodeMermaidDiagram(diagram: string): string {
   const compressed = deflate(diagram, { level: 9 });
   return Buffer.from(compressed).toString("base64url");
 }
@@ -112,7 +107,7 @@ function buildImageUrl(
     theme?: "default" | "neutral" | "dark" | "forest";
   } = {}
 ): string {
-  const encoded = encodeMermaidInk(diagram);
+  const encoded = encodeMermaidDiagram(diagram);
   const baseUrl = MermaidUrls.image(encoded);
   
   const params = new URLSearchParams();
@@ -139,7 +134,7 @@ function buildSvgUrl(
     scale?: number;
   } = {}
 ): string {
-  const encoded = encodeMermaidInk(diagram);
+  const encoded = encodeMermaidDiagram(diagram);
   const baseUrl = MermaidUrls.svg(encoded);
   
   const params = new URLSearchParams();
@@ -161,7 +156,7 @@ function buildPdfUrl(
     landscape?: boolean;
   } = {}
 ): string {
-  const encoded = encodeMermaidInk(diagram);
+  const encoded = encodeMermaidDiagram(diagram);
   const baseUrl = MermaidUrls.pdf(encoded);
   
   const params = new URLSearchParams();
@@ -177,7 +172,7 @@ function generateMermaidUrls(diagram: string, args: any): {
   editUrl: string;
   viewUrl: string;
 } {
-  const encoded = encodeMermaidLive(diagram);
+  const encoded = encodeMermaidDiagram(diagram);
   
   return {
     editUrl: MermaidUrls.edit(encoded),
