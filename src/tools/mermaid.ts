@@ -91,12 +91,16 @@ export function validateFormat(format: string): void {
   }
 }
 
-// Unified encoding for both Mermaid Live and Mermaid Ink - uses JSON + pako compression + base64url
+// Unified encoding for both Mermaid Live and Mermaid Ink - uses full Mermaid Live state JSON + pako compression + base64url
 function encodeMermaidDiagram(diagram: string): string {
-  // Wrap diagram in JSON format like Mermaid Live does
-  const jsonData = JSON.stringify({ code: diagram });
-  const compressed = deflate(jsonData, { level: 9 });
-  return Buffer.from(compressed).toString("base64url");
+  const json = JSON.stringify({ code: diagram }, undefined, 0);
+  const compressed = deflate(json, { level: 9, raw: false });
+  const b64url = Buffer.from(compressed)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return "pako:" + b64url;
 }
 
 function buildImageUrl(
