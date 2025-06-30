@@ -2,7 +2,6 @@ import { Tool, McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import { deflate } from "pako";
 import { getDownloadPath } from "../utils/file.js";
 import { MermaidUrls } from "../utils/config.js";
 
@@ -46,7 +45,8 @@ export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
       },
       bgColor: {
         type: "string",
-        description: "Background color (e.g., 'white', '#FFFFFF') for image/SVG",
+        description:
+          "Background color (e.g., 'white', '#FFFFFF') for image/SVG",
       },
       theme: {
         type: "string",
@@ -90,10 +90,9 @@ export function validateFormat(format: string): void {
   }
 }
 
-// Unified encoding for both Mermaid Ink and Mermaid Live - uses pako compression + base64url
+// Unified encoding for both Mermaid Ink and Mermaid Live - services handle pako compression
 function encodeMermaidDiagram(diagram: string): string {
-  const compressed = deflate(diagram, { level: 9 });
-  return Buffer.from(compressed).toString("base64url");
+  return Buffer.from(diagram, "utf8").toString("base64url");
 }
 
 function buildImageUrl(
@@ -109,7 +108,7 @@ function buildImageUrl(
 ): string {
   const encoded = encodeMermaidDiagram(diagram);
   const baseUrl = MermaidUrls.image(encoded);
-  
+
   const params = new URLSearchParams();
   if (options.type && options.type !== "jpeg") {
     params.append("type", options.type);
@@ -119,7 +118,7 @@ function buildImageUrl(
   if (options.scale) params.append("scale", options.scale.toString());
   if (options.bgColor) params.append("bgColor", options.bgColor);
   if (options.theme) params.append("theme", options.theme);
-  
+
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
@@ -136,14 +135,14 @@ function buildSvgUrl(
 ): string {
   const encoded = encodeMermaidDiagram(diagram);
   const baseUrl = MermaidUrls.svg(encoded);
-  
+
   const params = new URLSearchParams();
   if (options.bgColor) params.append("bgColor", options.bgColor);
   if (options.theme) params.append("theme", options.theme);
   if (options.width) params.append("width", options.width.toString());
   if (options.height) params.append("height", options.height.toString());
   if (options.scale) params.append("scale", options.scale.toString());
-  
+
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
@@ -158,22 +157,25 @@ function buildPdfUrl(
 ): string {
   const encoded = encodeMermaidDiagram(diagram);
   const baseUrl = MermaidUrls.pdf(encoded);
-  
+
   const params = new URLSearchParams();
   if (options.fit) params.append("fit", "true");
   if (options.paper) params.append("paper", options.paper);
   if (options.landscape) params.append("landscape", "true");
-  
+
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-function generateMermaidUrls(diagram: string, args: any): {
+function generateMermaidUrls(
+  diagram: string,
+  args: any
+): {
   editUrl: string;
   viewUrl: string;
 } {
   const encoded = encodeMermaidDiagram(diagram);
-  
+
   return {
     editUrl: MermaidUrls.edit(encoded),
     viewUrl: MermaidUrls.view(encoded),
@@ -223,7 +225,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
   }
 
   const { editUrl, viewUrl } = generateMermaidUrls(diagram, args);
-  
+
   // Get PNG image for base64 encoding
   const pngUrl = buildImageUrl(diagram, {
     type: "png",
@@ -233,7 +235,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
     bgColor: args.bgColor,
     theme: args.theme,
   });
-  
+
   const pngData = await fetchMermaidContent(pngUrl, "png");
   const pngBase64 = Buffer.from(pngData).toString("base64");
 
@@ -280,7 +282,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
 
   const format = (args.format as string) || "png";
   validateFormat(format);
-  
+
   const outputPath = getDownloadPath(
     args.outputPath as string | undefined,
     format
