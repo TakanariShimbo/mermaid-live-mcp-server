@@ -1,0 +1,10 @@
+{
+  "name": "mermaid-live-mcp-server",
+  "description": "A Model Context Protocol server for generating and working with Mermaid diagrams through Mermaid Live and Mermaid Ink",
+  "tools": [
+    {
+      "name": "create-mermaid-diagram",
+      "description": "Generate Mermaid diagrams in various formats (editor URL, view URL, image, SVG, PDF)"
+    }
+  ]
+}
