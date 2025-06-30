@@ -1,6 +1,9 @@
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { saveFile, downloadImage } from "../utils/file.js";
-import { resolve } from "path";
+import { Tool, McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
+import axios from "axios";
+import * as fs from "fs";
+import * as path from "path";
+import { getDownloadPath } from "../utils/file.js";
+import { MermaidUrls } from "../utils/config.js";
 import { deflate } from "pako";
 
 export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
@@ -43,8 +46,7 @@ export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
       },
       bgColor: {
         type: "string",
-        description:
-          "Background color (e.g., 'white', '#FFFFFF') for image/SVG",
+        description: "Background color (e.g., 'white', '#FFFFFF') for image/SVG",
       },
       theme: {
         type: "string",
@@ -69,24 +71,31 @@ export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
   },
 };
 
-// Utility functions for Mermaid diagram encoding and URL generation
+export function validateDiagram(diagram: string): void {
+  if (!diagram || typeof diagram !== "string" || diagram.trim().length === 0) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      "Diagram must be a non-empty string"
+    );
+  }
+}
+
+export function validateFormat(format: string): void {
+  const validFormats = ["png", "jpeg", "webp", "svg", "pdf"];
+  if (!validFormats.includes(format)) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `Invalid format: ${format}. Valid formats are: ${validFormats.join(", ")}`
+    );
+  }
+}
+
 function encodeMermaidDiagram(diagram: string): string {
   const compressed = deflate(diagram, { level: 9 });
   return Buffer.from(compressed).toString("base64url");
 }
 
-
-function getMermaidLiveEditUrl(diagram: string): string {
-  const compressed = encodeMermaidDiagram(diagram);
-  return `https://mermaid.live/edit#pako:${compressed}`;
-}
-
-function getMermaidLiveViewUrl(diagram: string): string {
-  const compressed = encodeMermaidDiagram(diagram);
-  return `https://mermaid.live/view#pako:${compressed}`;
-}
-
-function getMermaidInkImageUrl(
+function buildImageUrl(
   diagram: string,
   options: {
     type?: "jpeg" | "png" | "webp";
@@ -98,8 +107,8 @@ function getMermaidInkImageUrl(
   } = {}
 ): string {
   const compressed = encodeMermaidDiagram(diagram);
-  const baseUrl = `https://mermaid.ink/img/${compressed}`;
-
+  const baseUrl = MermaidUrls.image(compressed);
+  
   const params = new URLSearchParams();
   if (options.type && options.type !== "jpeg") {
     params.append("type", options.type);
@@ -109,12 +118,12 @@ function getMermaidInkImageUrl(
   if (options.scale) params.append("scale", options.scale.toString());
   if (options.bgColor) params.append("bgColor", options.bgColor);
   if (options.theme) params.append("theme", options.theme);
-
+  
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-function getMermaidInkSvgUrl(
+function buildSvgUrl(
   diagram: string,
   options: {
     bgColor?: string;
@@ -125,20 +134,20 @@ function getMermaidInkSvgUrl(
   } = {}
 ): string {
   const compressed = encodeMermaidDiagram(diagram);
-  const baseUrl = `https://mermaid.ink/svg/${compressed}`;
-
+  const baseUrl = MermaidUrls.svg(compressed);
+  
   const params = new URLSearchParams();
   if (options.bgColor) params.append("bgColor", options.bgColor);
   if (options.theme) params.append("theme", options.theme);
   if (options.width) params.append("width", options.width.toString());
   if (options.height) params.append("height", options.height.toString());
   if (options.scale) params.append("scale", options.scale.toString());
-
+  
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-function getMermaidInkPdfUrl(
+function buildPdfUrl(
   diagram: string,
   options: {
     fit?: boolean;
@@ -147,172 +156,205 @@ function getMermaidInkPdfUrl(
   } = {}
 ): string {
   const compressed = encodeMermaidDiagram(diagram);
-  const baseUrl = `https://mermaid.ink/pdf/${compressed}`;
-
+  const baseUrl = MermaidUrls.pdf(compressed);
+  
   const params = new URLSearchParams();
   if (options.fit) params.append("fit", "true");
   if (options.paper) params.append("paper", options.paper);
   if (options.landscape) params.append("landscape", "true");
-
+  
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-export async function handleCreateMermaidDiagram(args: any): Promise<any> {
-  const {
-    action,
-    diagram,
-    outputPath,
-    format = "png",
-    width,
-    height,
-    scale,
-    bgColor,
-    theme,
-    fit,
-    paper,
-    landscape,
-  } = args;
+function generateMermaidUrls(diagram: string, args: any): {
+  editUrl: string;
+  viewUrl: string;
+} {
+  const compressed = encodeMermaidDiagram(diagram);
+  
+  return {
+    editUrl: MermaidUrls.edit(compressed),
+    viewUrl: MermaidUrls.view(compressed),
+  };
+}
 
-  if (!diagram || typeof diagram !== "string") {
-    throw new Error("Invalid diagram: must be a non-empty string");
-  }
+async function fetchMermaidContent(
+  url: string,
+  format: string = "png"
+): Promise<any> {
+  const responseType = format === "svg" ? "text" : "arraybuffer";
 
-  if (action === "get_url") {
-    // Return multiple URLs for different purposes
-    const editUrl = getMermaidLiveEditUrl(diagram);
-    const viewUrl = getMermaidLiveViewUrl(diagram);
-
-    // Get image URLs for common formats
-    const pngUrl = getMermaidInkImageUrl(diagram, {
-      type: "png",
-      width,
-      height,
-      scale,
-      bgColor,
-      theme,
+  try {
+    const response = await axios.get(url, {
+      responseType: responseType as any,
+      timeout: 30000,
+      headers: {
+        Accept: format === "svg" ? "image/svg+xml" : "image/*",
+      },
     });
 
+    return response.data;
+  } catch (error) {
+    throw new McpError(
+      ErrorCode.InternalError,
+      `Failed to fetch diagram content: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
 
-    // Download PNG for base64 encoding (following chart.ts pattern)
-    const pngData = await downloadImage(pngUrl);
-    const pngBase64 = pngData.toString("base64");
+export async function handleCreateMermaidDiagram(args: any): Promise<any> {
+  const diagram = args.diagram as string;
+  if (!diagram) {
+    throw new McpError(ErrorCode.InvalidParams, "Missing diagram code");
+  }
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: "Below is the Mermaid Live Editor URL:",
-        },
-        {
-          type: "text",
-          text: editUrl,
-        },
-        {
-          type: "text",
-          text: "Below is the view-only URL:",
-        },
-        {
-          type: "text",
-          text: viewUrl,
-        },
-        {
-          type: "text",
-          text: "Below is the PNG image:",
-        },
-        {
-          type: "image",
-          data: pngBase64,
-          mimeType: "image/png",
-        },
-      ],
-      metadata: {
-        diagramType: "mermaid",
-        generatedAt: new Date().toISOString(),
-        viewUrl: viewUrl,
-        editUrl: editUrl,
-        pngBase64: pngBase64,
+  validateDiagram(diagram);
+
+  const action = args.action as string;
+  if (action !== "get_url" && action !== "save_file") {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `Invalid action: ${action}. Use 'get_url' or 'save_file'`
+    );
+  }
+
+  const { editUrl, viewUrl } = generateMermaidUrls(diagram, args);
+  
+  // Get PNG image for base64 encoding
+  const pngUrl = buildImageUrl(diagram, {
+    type: "png",
+    width: args.width,
+    height: args.height,
+    scale: args.scale,
+    bgColor: args.bgColor,
+    theme: args.theme,
+  });
+  
+  const pngData = await fetchMermaidContent(pngUrl, "png");
+  const pngBase64 = Buffer.from(pngData).toString("base64");
+
+  const result: any = {
+    content: [
+      {
+        type: "text",
+        text: "Below is the Mermaid Live Editor URL:",
       },
-    };
+      {
+        type: "text",
+        text: editUrl,
+      },
+      {
+        type: "text",
+        text: "Below is the view-only URL:",
+      },
+      {
+        type: "text",
+        text: viewUrl,
+      },
+      {
+        type: "text",
+        text: "Below is the PNG image:",
+      },
+      {
+        type: "image",
+        data: pngBase64,
+        mimeType: "image/png",
+      },
+    ],
+    metadata: {
+      diagramType: "mermaid",
+      generatedAt: new Date().toISOString(),
+      viewUrl: viewUrl,
+      editUrl: editUrl,
+      pngBase64: pngBase64,
+    },
+  };
+
+  if (action === "get_url") {
+    return result;
   }
 
-  if (action === "save_file") {
-    if (!outputPath) {
-      throw new Error("outputPath is required when action is 'save_file'");
+  const format = (args.format as string) || "png";
+  validateFormat(format);
+  
+  const outputPath = getDownloadPath(
+    args.outputPath as string | undefined,
+    format
+  );
+
+  try {
+    const dir = path.dirname(outputPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
 
-    const resolvedPath = resolve(outputPath);
+    let data: any;
+    let url: string;
 
-    try {
-      switch (format) {
-        case "png":
-        case "jpeg":
-        case "webp": {
-          const imageUrl = getMermaidInkImageUrl(diagram, {
-            type: format as "jpeg" | "png" | "webp",
-            width,
-            height,
-            scale,
-            bgColor,
-            theme,
-          });
-          const imageBuffer = await downloadImage(imageUrl);
-          await saveFile(resolvedPath, imageBuffer);
-          break;
-        }
+    switch (format) {
+      case "png":
+      case "jpeg":
+      case "webp":
+        url = buildImageUrl(diagram, {
+          type: format as "jpeg" | "png" | "webp",
+          width: args.width,
+          height: args.height,
+          scale: args.scale,
+          bgColor: args.bgColor,
+          theme: args.theme,
+        });
+        data = await fetchMermaidContent(url, format);
+        fs.writeFileSync(outputPath, data);
+        break;
 
-        case "svg": {
-          const svgUrl = getMermaidInkSvgUrl(diagram, {
-            bgColor,
-            theme,
-            width,
-            height,
-            scale,
-          });
-          const response = await fetch(svgUrl);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch SVG: ${response.statusText}`);
-          }
-          const svgContent = await response.text();
-          await saveFile(resolvedPath, svgContent);
-          break;
-        }
+      case "svg":
+        url = buildSvgUrl(diagram, {
+          bgColor: args.bgColor,
+          theme: args.theme,
+          width: args.width,
+          height: args.height,
+          scale: args.scale,
+        });
+        data = await fetchMermaidContent(url, "svg");
+        fs.writeFileSync(outputPath, data, "utf8");
+        break;
 
-        case "pdf": {
-          const pdfUrl = getMermaidInkPdfUrl(diagram, {
-            fit,
-            paper,
-            landscape,
-          });
-          const pdfBuffer = await downloadImage(pdfUrl);
-          await saveFile(resolvedPath, pdfBuffer);
-          break;
-        }
+      case "pdf":
+        url = buildPdfUrl(diagram, {
+          fit: args.fit,
+          paper: args.paper,
+          landscape: args.landscape,
+        });
+        data = await fetchMermaidContent(url, "pdf");
+        fs.writeFileSync(outputPath, data);
+        break;
 
-        default:
-          throw new Error(`Unsupported format: ${format}`);
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Below is the saved file path:",
-          },
-          {
-            type: "text",
-            text: resolvedPath,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(
-        `Failed to save file: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      default:
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Unsupported format: ${format}`
+        );
     }
+
+    result.metadata.savedPath = outputPath;
+    result.content.push({
+      type: "text",
+      text: "Below is the saved file path:",
+    });
+    result.content.push({
+      type: "text",
+      text: outputPath,
+    });
+    return result;
+  } catch (error) {
+    throw new McpError(
+      ErrorCode.InternalError,
+      `Failed to save diagram: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
-
-  throw new Error(`Unknown action: ${action}`);
 }
