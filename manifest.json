@@ -1,10 +1,10 @@
 {
   "dxt_version": "0.1",
-  "name": "mermaid-live-mcp-server",
+  "name": "@takanarishimbo/mermaid-live-mcp-server",
   "display_name": "mermaid",
   "version": "0.1.0",
   "description": "A Model Context Protocol server for generating Mermaid diagrams using Mermaid Live and Mermaid Ink",
-  "long_description": "This Model Context Protocol (MCP) server provides powerful diagram generation capabilities using Mermaid.js through Mermaid Live and Mermaid Ink APIs. Create flowcharts, sequence diagrams, class diagrams, state diagrams, and more.",
+  "long_description": "This Model Context Protocol (MCP) server provides powerful diagram creation tools using Mermaid Live and Mermaid Ink services. With this MCP, AI assistants can create flowcharts, sequence diagrams, class diagrams, and other Mermaid visualizations.",
   "author": {
     "name": "TakanariShimbo"
   },
@@ -16,32 +16,26 @@
     "mermaid_live_base_url": {
       "type": "string",
       "title": "Mermaid Live Base URL",
-      "description": "Mermaid Live Editor base URL",
+      "description": "Mermaid Live editor base URL",
       "default": "https://mermaid.live"
     },
     "mermaid_ink_base_url": {
       "type": "string",
       "title": "Mermaid Ink Base URL",
-      "description": "Mermaid Ink API base URL for image generation",
+      "description": "Mermaid Ink rendering service base URL",
       "default": "https://mermaid.ink"
     },
     "default_output_dir": {
       "type": "string",
       "title": "Default Output Directory",
-      "description": "Default directory for saving files (absolute path only, empty defaults to Desktop)",
+      "description": "Default directory for saving files (absolute path, default: Desktop in home directory)",
       "default": ""
     },
-    "default_theme": {
-      "type": "string",
-      "title": "Default Theme",
-      "description": "Default theme for Mermaid diagrams",
-      "default": "default"
-    },
-    "default_background_color": {
-      "type": "string",
-      "title": "Default Background Color",
-      "description": "Default background color for generated images",
-      "default": "white"
+    "enable_create_mermaid_diagram": {
+      "type": "boolean",
+      "title": "Enable Mermaid Diagram Tool",
+      "description": "Enable Mermaid diagram creation tool",
+      "default": true
     }
   },
   "server": {
@@ -54,86 +48,76 @@
         "MERMAID_LIVE_BASE_URL": "${user_config.mermaid_live_base_url}",
         "MERMAID_INK_BASE_URL": "${user_config.mermaid_ink_base_url}",
         "MERMAID_DEFAULT_OUTPUT_DIR": "${user_config.default_output_dir}",
-        "MERMAID_DEFAULT_THEME": "${user_config.default_theme}",
-        "MERMAID_DEFAULT_BACKGROUND_COLOR": "${user_config.default_background_color}"
+        "MERMAID_ENABLE_CREATE_MERMAID_DIAGRAM": "${user_config.enable_create_mermaid_diagram}"
       }
     }
   },
   "tools": [
     {
       "name": "create-mermaid-diagram",
-      "description": "Generate Mermaid diagrams in various formats (editor URL, view URL, image, SVG, PDF) - supports flowcharts, sequence diagrams, class diagrams, state diagrams, and more"
-    },
-    {
-      "name": "get-mermaid-editor-url",
-      "description": "Get Mermaid Live editor URL for interactive diagram editing"
-    },
-    {
-      "name": "get-mermaid-view-url", 
-      "description": "Get Mermaid Live view URL for sharing diagram previews"
-    },
-    {
-      "name": "save-mermaid-image",
-      "description": "Save Mermaid diagram as image file (PNG, SVG, PDF) to local filesystem"
-    },
-    {
-      "name": "get-mermaid-help",
-      "description": "Get detailed usage information and examples for Mermaid diagram creation"
+      "description": "Create a Mermaid diagram - get URLs for editing/viewing/downloading or save diagram to file"
     }
   ],
   "prompts": [
     {
       "name": "create_flowchart_url",
-      "description": "Create a flowchart and get editor URL",
-      "text": "Create a flowchart showing our development process. Include decision points and clear flow directions. Generate an editor URL so I can modify it interactively."
+      "description": "Create a flowchart and get URLs",
+      "text": "Create a flowchart showing our development process. Include decision points and clear flow directions. Use action: get_url to provide URLs for editing and viewing."
     },
     {
       "name": "create_flowchart_file",
       "description": "Create a flowchart and save to file",
-      "text": "Create a flowchart showing our development process. Include decision points and clear flow directions. Save it as PNG file to my desktop for documentation."
+      "text": "Create a flowchart showing our development process. Include decision points and clear flow directions. Use action: save_file to save it as PNG file to my desktop."
     },
     {
       "name": "create_sequence_diagram_url",
-      "description": "Create a sequence diagram and get editor URL",
-      "text": "Create a sequence diagram for our API authentication flow. Show all the interactions between client, server, and database. Generate an editor URL for team review."
+      "description": "Create a sequence diagram and get URLs",
+      "text": "Create a sequence diagram for our API authentication flow. Show all the interactions between client, server, and database. Use action: get_url for team review and sharing."
     },
     {
       "name": "create_sequence_diagram_file",
       "description": "Create a sequence diagram and save to file",
-      "text": "Create a sequence diagram for our API authentication flow. Show all the interactions between client, server, and database. Save it as SVG file for our technical documentation."
+      "text": "Create a sequence diagram for our API authentication flow. Show all the interactions between client, server, and database. Use action: save_file to save it as SVG file for technical documentation."
     },
     {
       "name": "create_class_diagram_url",
-      "description": "Create a class diagram and get editor URL",
-      "text": "Generate a class diagram for our user management system. Include relationships, methods, and properties. Provide an editor URL for collaborative editing."
+      "description": "Create a class diagram and get URLs",
+      "text": "Generate a class diagram for our user management system. Include relationships, methods, and properties. Use action: get_url for collaborative editing and review."
     },
     {
       "name": "create_class_diagram_file",
       "description": "Create a class diagram and save to file",
-      "text": "Generate a class diagram for our user management system. Include relationships, methods, and properties. Save it as PDF file for architecture documentation."
+      "text": "Generate a class diagram for our user management system. Include relationships, methods, and properties. Use action: save_file to save it as PDF file for architecture documentation."
     },
     {
       "name": "create_state_diagram_url",
-      "description": "Create a state diagram and get editor URL",
-      "text": "Create a state diagram for our order processing workflow. Show all states and transitions clearly. Generate an editor URL for stakeholder review."
+      "description": "Create a state diagram and get URLs",
+      "text": "Create a state diagram for our order processing workflow. Show all states and transitions clearly. Use action: get_url for stakeholder review and presentation."
     },
     {
       "name": "create_state_diagram_file",
       "description": "Create a state diagram and save to file",
-      "text": "Create a state diagram for our order processing workflow. Show all states and transitions clearly. Save it as PNG file for process documentation."
+      "text": "Create a state diagram for our order processing workflow. Show all states and transitions clearly. Use action: save_file to save it as PNG file for process documentation."
     },
     {
       "name": "create_gantt_chart_url",
-      "description": "Create a Gantt chart and get editor URL",
-      "text": "Create a Gantt chart for our project timeline. Include milestones and task dependencies. Generate an editor URL for project planning collaboration."
+      "description": "Create a Gantt chart and get URLs",
+      "text": "Create a Gantt chart for our project timeline. Include milestones and task dependencies. Use action: get_url for project planning collaboration."
     },
     {
       "name": "create_gantt_chart_file",
       "description": "Create a Gantt chart and save to file",
-      "text": "Create a Gantt chart for our project timeline. Include milestones and task dependencies. Save it as PDF file for project management."
+      "text": "Create a Gantt chart for our project timeline. Include milestones and task dependencies. Use action: save_file to save it as PDF file for project management."
     }
   ],
-  "keywords": ["mermaid", "diagram", "flowchart", "sequence", "class", "visualization"],
+  "keywords": [
+    "mermaid",
+    "diagram",
+    "flowchart",
+    "sequence",
+    "class",
+    "visualization"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
