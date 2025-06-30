@@ -2,9 +2,9 @@ import { Tool, McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
+import { deflate } from "pako";
 import { getDownloadPath } from "../utils/file.js";
 import { MermaidUrls } from "../utils/config.js";
-import { deflate } from "pako";
 
 export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
   name: "create-mermaid-diagram",
@@ -90,7 +90,13 @@ export function validateFormat(format: string): void {
   }
 }
 
-function encodeMermaidDiagram(diagram: string): string {
+// Encoding for Mermaid Ink (image generation service) - uses simple base64
+function encodeMermaidInk(diagram: string): string {
+  return Buffer.from(diagram, 'utf8').toString('base64');
+}
+
+// Encoding for Mermaid Live (editor) - uses pako compression + base64url
+function encodeMermaidLive(diagram: string): string {
   const compressed = deflate(diagram, { level: 9 });
   return Buffer.from(compressed).toString("base64url");
 }
@@ -106,8 +112,8 @@ function buildImageUrl(
     theme?: "default" | "neutral" | "dark" | "forest";
   } = {}
 ): string {
-  const compressed = encodeMermaidDiagram(diagram);
-  const baseUrl = MermaidUrls.image(compressed);
+  const encoded = encodeMermaidInk(diagram);
+  const baseUrl = MermaidUrls.image(encoded);
   
   const params = new URLSearchParams();
   if (options.type && options.type !== "jpeg") {
@@ -133,8 +139,8 @@ function buildSvgUrl(
     scale?: number;
   } = {}
 ): string {
-  const compressed = encodeMermaidDiagram(diagram);
-  const baseUrl = MermaidUrls.svg(compressed);
+  const encoded = encodeMermaidInk(diagram);
+  const baseUrl = MermaidUrls.svg(encoded);
   
   const params = new URLSearchParams();
   if (options.bgColor) params.append("bgColor", options.bgColor);
@@ -155,8 +161,8 @@ function buildPdfUrl(
     landscape?: boolean;
   } = {}
 ): string {
-  const compressed = encodeMermaidDiagram(diagram);
-  const baseUrl = MermaidUrls.pdf(compressed);
+  const encoded = encodeMermaidInk(diagram);
+  const baseUrl = MermaidUrls.pdf(encoded);
   
   const params = new URLSearchParams();
   if (options.fit) params.append("fit", "true");
@@ -171,11 +177,11 @@ function generateMermaidUrls(diagram: string, args: any): {
   editUrl: string;
   viewUrl: string;
 } {
-  const compressed = encodeMermaidDiagram(diagram);
+  const encoded = encodeMermaidLive(diagram);
   
   return {
-    editUrl: MermaidUrls.edit(compressed),
-    viewUrl: MermaidUrls.view(compressed),
+    editUrl: MermaidUrls.edit(encoded),
+    viewUrl: MermaidUrls.view(encoded),
   };
 }
 
