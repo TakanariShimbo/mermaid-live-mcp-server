@@ -274,26 +274,23 @@ async function fetchMermaidContent(
   url: string,
   format: string = "png"
 ): Promise<any> {
-  const responseType = format === "svg" ? "text" : "arraybuffer";
+  const isSvg = format === "svg";
+  const config = {
+    responseType: (isSvg ? "text" : "arraybuffer") as any,
+    timeout: 30000,
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      Accept: isSvg ? "image/svg+xml,*/*" : "image/*,*/*",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br",
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+    },
+    validateStatus: (status: number) => status >= 200 && status < 300,
+  };
 
   try {
-    const response = await axios.get(url, {
-      responseType: responseType as any,
-      timeout: 30000,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Accept: format === "svg" ? "image/svg+xml,*/*" : "image/*,*/*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        Connection: "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-      },
-      validateStatus: function (status) {
-        return status >= 200 && status < 300;
-      },
-    });
-
+    const response = await axios.get(url, config);
     return response.data;
   } catch (error) {
     const axiosError = error as any;
