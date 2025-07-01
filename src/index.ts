@@ -20,7 +20,7 @@ import { TOOLS, TOOL_HANDLERS } from "./tools/index.js";
 const server = new Server(
   {
     name: "mermaid-live-server",
-    version: "0.3.0",
+    version: "0.3.1",
   },
   {
     capabilities: {
