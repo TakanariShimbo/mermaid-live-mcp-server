@@ -209,24 +209,9 @@ function encodeMermaidDiagram(diagram: string): string {
   return fromUint8Array(zlib, true);
 }
 
-function generateMermaidUrls(
+function buildMermaidUrl(
   diagram: string,
-  args: any
-): {
-  editUrl: string;
-  viewUrl: string;
-} {
-  const encoded = encodeMermaidDiagram(diagram);
-
-  return {
-    editUrl: MermaidUrls.edit(encoded),
-    viewUrl: MermaidUrls.view(encoded),
-  };
-}
-
-function buildFormatUrl(
-  diagram: string,
-  format: "png" | "jpeg" | "webp" | "svg" | "pdf",
+  type: "edit" | "view" | "png" | "jpeg" | "webp" | "svg" | "pdf",
   options: {
     width?: number;
     height?: number;
@@ -240,7 +225,11 @@ function buildFormatUrl(
   const encoded = encodeMermaidDiagram(diagram);
 
   let baseUrl: string;
-  switch (format) {
+  switch (type) {
+    case "edit":
+      return MermaidUrls.edit(encoded);
+    case "view":
+      return MermaidUrls.view(encoded);
     case "png":
     case "jpeg":
     case "webp":
@@ -253,25 +242,25 @@ function buildFormatUrl(
       baseUrl = MermaidUrls.pdf(encoded);
       break;
     default:
-      throw new Error(`Unsupported format: ${format}`);
+      throw new Error(`Unsupported type: ${type}`);
   }
 
   const params = new URLSearchParams();
 
-  if (format === "png" || format === "jpeg" || format === "webp") {
-    if (format !== "jpeg") {
-      params.append("type", format);
+  if (type === "png" || type === "jpeg" || type === "webp") {
+    if (type !== "jpeg") {
+      params.append("type", type);
     }
     if (options?.width) params.append("width", options.width.toString());
     if (options?.height) params.append("height", options.height.toString());
     if (options?.scale) params.append("scale", options.scale.toString());
     if (options?.bgColor) params.append("bgColor", options.bgColor);
-  } else if (format === "svg") {
+  } else if (type === "svg") {
     if (options?.bgColor) params.append("bgColor", options.bgColor);
     if (options?.width) params.append("width", options.width.toString());
     if (options?.height) params.append("height", options.height.toString());
     if (options?.scale) params.append("scale", options.scale.toString());
-  } else if (format === "pdf") {
+  } else if (type === "pdf") {
     if (options?.fit) params.append("fit", "true");
     if (options?.paper) params.append("paper", options.paper);
     if (options?.landscape) params.append("landscape", "true");
@@ -327,10 +316,11 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
   validateBgColor(args.bgColor);
   validatePdfOptions(args.fit, args.paper, args.landscape);
 
-  const { editUrl, viewUrl } = generateMermaidUrls(diagram, args);
+  const editUrl = buildMermaidUrl(diagram, "edit");
+  const viewUrl = buildMermaidUrl(diagram, "view");
 
   // Get PNG image for base64 encoding
-  const pngUrl = buildFormatUrl(diagram, "png", {
+  const pngUrl = buildMermaidUrl(diagram, "png", {
     width: args.width,
     height: args.height,
     scale: args.scale,
@@ -446,7 +436,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
       case "png":
       case "jpeg":
       case "webp":
-        url = buildFormatUrl(diagram, format as "jpeg" | "png" | "webp", {
+        url = buildMermaidUrl(diagram, format as "jpeg" | "png" | "webp", {
           width: args.width,
           height: args.height,
           scale: args.scale,
@@ -457,7 +447,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
         break;
 
       case "svg":
-        url = buildFormatUrl(diagram, "svg", {
+        url = buildMermaidUrl(diagram, "svg", {
           bgColor: args.bgColor,
           width: args.width,
           height: args.height,
@@ -468,7 +458,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
         break;
 
       case "pdf":
-        url = buildFormatUrl(diagram, "pdf", {
+        url = buildMermaidUrl(diagram, "pdf", {
           fit: args.fit,
           paper: args.paper,
           landscape: args.landscape,
