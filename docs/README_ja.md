@@ -287,6 +287,36 @@ erDiagram
    npx @modelcontextprotocol/inspector node dist/index.js
    ```
 
+## Desktop Extension (DXT) の作成
+
+Desktop Extensions (.dxt) により、Claude Desktop で MCP サーバーをワンクリックでインストールできます。このサーバー用の DXT ファイルを作成するには：
+
+### 1. DXT マニフェストの初期化
+
+プロジェクトルートディレクトリで以下のコマンドを実行：
+
+```bash
+npx @anthropic-ai/dxt init
+```
+
+### 2. DXT パッケージの作成
+
+```bash
+npx @anthropic-ai/dxt pack
+```
+
+これにより、ユーザーが Claude Desktop でワンクリックでインストールできる `.dxt` ファイルが作成されます。
+
+### 3. ユーザー設定
+
+DXT ファイルには、ユーザーが以下を設定できる構成オプションが含まれています：
+
+- **URL 設定**: カスタム Mermaid Live インスタンス URL の設定
+- **ツール管理**: 特定の図表作成ツールの有効/無効化
+- **簡単インストール**: 手動での JSON 設定不要
+
+ユーザーは、インストール時または後で Claude Desktop の拡張機能管理インターフェースを通じてこれらの設定を変更できます。
+
 ## NPM への公開
 
 このプロジェクトは GitHub Actions を通じた自動 NPM 公開機能を含んでいます。公開の設定方法：
