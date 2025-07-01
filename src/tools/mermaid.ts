@@ -209,6 +209,21 @@ function encodeMermaidDiagram(diagram: string): string {
   return fromUint8Array(zlib, true);
 }
 
+function generateMermaidUrls(
+  diagram: string,
+  args: any
+): {
+  editUrl: string;
+  viewUrl: string;
+} {
+  const encoded = encodeMermaidDiagram(diagram);
+
+  return {
+    editUrl: MermaidUrls.edit(encoded),
+    viewUrl: MermaidUrls.view(encoded),
+  };
+}
+
 function buildFormatUrl(
   diagram: string,
   format: "png" | "jpeg" | "webp" | "svg" | "pdf",
@@ -266,21 +281,6 @@ function buildFormatUrl(
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-function generateMermaidUrls(
-  diagram: string,
-  args: any
-): {
-  editUrl: string;
-  viewUrl: string;
-} {
-  const encoded = encodeMermaidDiagram(diagram);
-
-  return {
-    editUrl: MermaidUrls.edit(encoded),
-    viewUrl: MermaidUrls.view(encoded),
-  };
-}
-
 async function fetchMermaidContent(
   url: string,
   format: string = "png"
@@ -311,7 +311,7 @@ async function fetchMermaidContent(
     const message = axiosError.response
       ? `Failed to fetch diagram content from ${url} - Status: ${axiosError.response.status}`
       : `Failed to fetch diagram content from ${url} - ${axiosError.message}`;
-    
+
     throw new McpError(ErrorCode.InternalError, message);
   }
 }
