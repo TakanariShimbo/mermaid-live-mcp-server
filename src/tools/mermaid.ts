@@ -429,49 +429,22 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    let data: any;
-    let url: string;
-
-    switch (format) {
-      case "png":
-      case "jpeg":
-      case "webp":
-        url = buildMermaidUrl(diagram, format as "jpeg" | "png" | "webp", {
-          width: args.width,
-          height: args.height,
-          scale: args.scale,
-          bgColor: args.bgColor,
-        });
-        data = await fetchMermaidContent(url, format);
-        fs.writeFileSync(outputPath, data);
-        break;
-
-      case "svg":
-        url = buildMermaidUrl(diagram, "svg", {
-          bgColor: args.bgColor,
-          width: args.width,
-          height: args.height,
-          scale: args.scale,
-        });
-        data = await fetchMermaidContent(url, "svg");
-        fs.writeFileSync(outputPath, data, "utf8");
-        break;
-
-      case "pdf":
-        url = buildMermaidUrl(diagram, "pdf", {
-          fit: args.fit,
-          paper: args.paper,
-          landscape: args.landscape,
-        });
-        data = await fetchMermaidContent(url, "pdf");
-        fs.writeFileSync(outputPath, data);
-        break;
-
-      default:
-        throw new McpError(
-          ErrorCode.InvalidParams,
-          `Unsupported format: ${format}`
-        );
+    const url = buildMermaidUrl(diagram, format as "png" | "jpeg" | "webp" | "svg" | "pdf", {
+      width: args.width,
+      height: args.height,
+      scale: args.scale,
+      bgColor: args.bgColor,
+      fit: args.fit,
+      paper: args.paper,
+      landscape: args.landscape,
+    });
+    
+    const data = await fetchMermaidContent(url, format);
+    
+    if (format === "svg") {
+      fs.writeFileSync(outputPath, data, "utf8");
+    } else {
+      fs.writeFileSync(outputPath, data);
     }
 
     result.metadata.savedPath = outputPath;
