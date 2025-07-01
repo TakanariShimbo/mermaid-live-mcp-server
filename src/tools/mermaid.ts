@@ -50,11 +50,6 @@ export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
         description:
           "Background color (e.g., 'white', '#FFFFFF') for image/SVG",
       },
-      theme: {
-        type: "string",
-        enum: ["default", "neutral", "dark", "forest"],
-        description: "Mermaid theme (for image/SVG)",
-      },
       fit: {
         type: "boolean",
         description: "Fit diagram to page size (for PDF)",
@@ -107,7 +102,6 @@ function buildImageUrl(
     height?: number;
     scale?: number;
     bgColor?: string;
-    theme?: "default" | "neutral" | "dark" | "forest";
   } = {}
 ): string {
   const encoded = encodeMermaidDiagram(diagram);
@@ -121,7 +115,6 @@ function buildImageUrl(
   if (options?.height) params.append("height", options.height.toString());
   if (options?.scale) params.append("scale", options.scale.toString());
   if (options?.bgColor) params.append("bgColor", options.bgColor);
-  if (options?.theme) params.append("theme", options.theme);
 
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
@@ -131,7 +124,6 @@ function buildSvgUrl(
   diagram: string,
   options: {
     bgColor?: string;
-    theme?: "default" | "neutral" | "dark" | "forest";
     width?: number;
     height?: number;
     scale?: number;
@@ -142,7 +134,6 @@ function buildSvgUrl(
 
   const params = new URLSearchParams();
   if (options?.bgColor) params.append("bgColor", options.bgColor);
-  if (options?.theme) params.append("theme", options.theme);
   if (options?.width) params.append("width", options.width.toString());
   if (options?.height) params.append("height", options.height.toString());
   if (options?.scale) params.append("scale", options.scale.toString());
@@ -262,7 +253,6 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
     height: args.height,
     scale: args.scale,
     bgColor: args.bgColor,
-    theme: args.theme,
   });
 
   let pngData;
@@ -378,8 +368,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
           height: args.height,
           scale: args.scale,
           bgColor: args.bgColor,
-          theme: args.theme,
-        });
+          });
         data = await fetchMermaidContent(url, format);
         fs.writeFileSync(outputPath, data);
         break;
@@ -387,8 +376,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
       case "svg":
         url = buildSvgUrl(diagram, {
           bgColor: args.bgColor,
-          theme: args.theme,
-          width: args.width,
+            width: args.width,
           height: args.height,
           scale: args.scale,
         });
