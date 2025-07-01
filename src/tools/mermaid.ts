@@ -7,6 +7,9 @@ import { getDownloadPath } from "../utils/file.js";
 import { MermaidUrls } from "../utils/config.js";
 import { fromUint8Array } from "js-base64";
 
+/**
+ * Tool description:
+ */
 export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
   name: "create-mermaid-diagram",
   description:
@@ -68,6 +71,9 @@ export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
   },
 };
 
+/**
+ * Validates
+ */
 export function validateDiagram(diagram: string): void {
   if (!diagram || typeof diagram !== "string" || diagram.trim().length === 0) {
     throw new McpError(
@@ -83,6 +89,115 @@ export function validateFormat(format: string): void {
     throw new McpError(
       ErrorCode.InvalidParams,
       `Invalid format: ${format}. Valid formats are: ${validFormats.join(", ")}`
+    );
+  }
+}
+
+export function validateAction(action: string): void {
+  if (!action || typeof action !== "string" || action.trim().length === 0) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      "Action must be a non-empty string"
+    );
+  }
+  const validActions = ["get_url", "save_file"];
+  if (!validActions.includes(action)) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `Invalid action: ${action}. Valid actions are: ${validActions.join(", ")}`
+    );
+  }
+}
+
+export function validateOutputPath(
+  outputPath: string | undefined,
+  action: string
+): void {
+  if (
+    action === "save_file" &&
+    (!outputPath ||
+      typeof outputPath !== "string" ||
+      outputPath.trim().length === 0)
+  ) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      "Output path is required for save_file action"
+    );
+  }
+}
+
+export function validateDimensions(width?: number, height?: number): void {
+  if (width !== undefined) {
+    if (!Number.isInteger(width) || width <= 0 || width > 10000) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        "Width must be a positive integer between 1 and 10000"
+      );
+    }
+  }
+  if (height !== undefined) {
+    if (!Number.isInteger(height) || height <= 0 || height > 10000) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        "Height must be a positive integer between 1 and 10000"
+      );
+    }
+  }
+}
+
+export function validateScale(scale?: number): void {
+  if (scale !== undefined) {
+    if (typeof scale !== "number" || scale <= 0 || scale > 10) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        "Scale must be a positive number between 0 and 10"
+      );
+    }
+  }
+}
+
+export function validateBgColor(bgColor?: string): void {
+  if (bgColor !== undefined) {
+    if (typeof bgColor !== "string" || bgColor.trim().length === 0) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        "Background color must be a non-empty string"
+      );
+    }
+    const colorPattern =
+      /^(#[0-9A-Fa-f]{3,8}|[a-zA-Z]+|rgb\(.*\)|rgba\(.*\)|hsl\(.*\)|hsla\(.*\))$/;
+    if (!colorPattern.test(bgColor.trim())) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        "Background color must be a valid CSS color (e.g., 'white', '#FFFFFF', 'rgb(255,255,255)')"
+      );
+    }
+  }
+}
+
+export function validatePdfOptions(
+  fit?: boolean,
+  paper?: string,
+  landscape?: boolean
+): void {
+  if (fit !== undefined && typeof fit !== "boolean") {
+    throw new McpError(ErrorCode.InvalidParams, "Fit option must be a boolean");
+  }
+  if (paper !== undefined) {
+    const validPapers = ["a3", "a4", "a5"];
+    if (!validPapers.includes(paper)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Invalid paper size: ${paper}. Valid sizes are: ${validPapers.join(
+          ", "
+        )}`
+      );
+    }
+  }
+  if (landscape !== undefined && typeof landscape !== "boolean") {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      "Landscape option must be a boolean"
     );
   }
 }
@@ -188,12 +303,13 @@ async function fetchMermaidContent(
       responseType: responseType as any,
       timeout: 30000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': format === "svg" ? "image/svg+xml,*/*" : "image/*,*/*",
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Accept: format === "svg" ? "image/svg+xml,*/*" : "image/*,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        Connection: "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
       },
       validateStatus: function (status) {
         return status >= 200 && status < 300;
@@ -205,14 +321,14 @@ async function fetchMermaidContent(
     // Log more detailed error information
     const axiosError = error as any;
     let errorMessage = `Failed to fetch diagram content from ${url}`;
-    
+
     if (axiosError.response) {
       errorMessage += ` - Status: ${axiosError.response.status}`;
       errorMessage += ` - StatusText: ${axiosError.response.statusText}`;
       if (axiosError.response.data) {
-        const errorData = axiosError.response.data.toString ? 
-          axiosError.response.data.toString().substring(0, 200) : 
-          String(axiosError.response.data).substring(0, 200);
+        const errorData = axiosError.response.data.toString
+          ? axiosError.response.data.toString().substring(0, 200)
+          : String(axiosError.response.data).substring(0, 200);
         errorMessage += ` - Response: ${errorData}`;
       }
     } else if (axiosError.request) {
@@ -221,28 +337,20 @@ async function fetchMermaidContent(
       errorMessage += ` - Error: ${axiosError.message}`;
     }
 
-    throw new McpError(
-      ErrorCode.InternalError,
-      errorMessage
-    );
+    throw new McpError(ErrorCode.InternalError, errorMessage);
   }
 }
 
 export async function handleCreateMermaidDiagram(args: any): Promise<any> {
   const diagram = args.diagram as string;
-  if (!diagram) {
-    throw new McpError(ErrorCode.InvalidParams, "Missing diagram code");
-  }
-
-  validateDiagram(diagram);
-
   const action = args.action as string;
-  if (action !== "get_url" && action !== "save_file") {
-    throw new McpError(
-      ErrorCode.InvalidParams,
-      `Invalid action: ${action}. Use 'get_url' or 'save_file'`
-    );
-  }
+  validateDiagram(diagram);
+  validateAction(action);
+  validateOutputPath(args.outputPath, action);
+  validateDimensions(args.width, args.height);
+  validateScale(args.scale);
+  validateBgColor(args.bgColor);
+  validatePdfOptions(args.fit, args.paper, args.landscape);
 
   const { editUrl, viewUrl } = generateMermaidUrls(diagram, args);
 
@@ -257,7 +365,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
 
   let pngData;
   let pngBase64 = "";
-  
+
   try {
     pngData = await fetchMermaidContent(pngUrl, "png");
     pngBase64 = Buffer.from(pngData).toString("base64");
@@ -287,7 +395,9 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
         },
         {
           type: "text",
-          text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+          text: `Error: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
         },
       ],
       metadata: {
@@ -368,7 +478,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
           height: args.height,
           scale: args.scale,
           bgColor: args.bgColor,
-          });
+        });
         data = await fetchMermaidContent(url, format);
         fs.writeFileSync(outputPath, data);
         break;
@@ -376,7 +486,7 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
       case "svg":
         url = buildSvgUrl(diagram, {
           bgColor: args.bgColor,
-            width: args.width,
+          width: args.width,
           height: args.height,
           scale: args.scale,
         });
