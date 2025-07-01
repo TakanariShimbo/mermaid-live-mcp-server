@@ -202,6 +202,9 @@ function validatePdfOptions(
   }
 }
 
+/**
+ * Fetches
+ */
 function encodeMermaidDiagram(diagram: string): string {
   const json = JSON.stringify({ code: diagram });
   const bytes = new TextEncoder().encode(json);
@@ -279,7 +282,8 @@ async function fetchMermaidContent(
     responseType: (isSvg ? "text" : "arraybuffer") as any,
     timeout: 30000,
     headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       Accept: isSvg ? "image/svg+xml,*/*" : "image/*,*/*",
       "Accept-Language": "en-US,en;q=0.9",
       "Accept-Encoding": "gzip, deflate, br",
@@ -302,6 +306,9 @@ async function fetchMermaidContent(
   }
 }
 
+/**
+ * Tool handler
+ */
 export async function handleCreateMermaidDiagram(args: any): Promise<any> {
   const diagram = args.diagram as string;
   const action = args.action as string;
