@@ -114,14 +114,14 @@ function buildImageUrl(
   const baseUrl = MermaidUrls.image(encoded);
 
   const params = new URLSearchParams();
-  if (options.type && options.type !== "jpeg") {
+  if (options?.type && options.type !== "jpeg") {
     params.append("type", options.type);
   }
-  if (options.width) params.append("width", options.width.toString());
-  if (options.height) params.append("height", options.height.toString());
-  if (options.scale) params.append("scale", options.scale.toString());
-  if (options.bgColor) params.append("bgColor", options.bgColor);
-  if (options.theme) params.append("theme", options.theme);
+  if (options?.width) params.append("width", options.width.toString());
+  if (options?.height) params.append("height", options.height.toString());
+  if (options?.scale) params.append("scale", options.scale.toString());
+  if (options?.bgColor) params.append("bgColor", options.bgColor);
+  if (options?.theme) params.append("theme", options.theme);
 
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
@@ -141,11 +141,11 @@ function buildSvgUrl(
   const baseUrl = MermaidUrls.svg(encoded);
 
   const params = new URLSearchParams();
-  if (options.bgColor) params.append("bgColor", options.bgColor);
-  if (options.theme) params.append("theme", options.theme);
-  if (options.width) params.append("width", options.width.toString());
-  if (options.height) params.append("height", options.height.toString());
-  if (options.scale) params.append("scale", options.scale.toString());
+  if (options?.bgColor) params.append("bgColor", options.bgColor);
+  if (options?.theme) params.append("theme", options.theme);
+  if (options?.width) params.append("width", options.width.toString());
+  if (options?.height) params.append("height", options.height.toString());
+  if (options?.scale) params.append("scale", options.scale.toString());
 
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
@@ -163,9 +163,9 @@ function buildPdfUrl(
   const baseUrl = MermaidUrls.pdf(encoded);
 
   const params = new URLSearchParams();
-  if (options.fit) params.append("fit", "true");
-  if (options.paper) params.append("paper", options.paper);
-  if (options.landscape) params.append("landscape", "true");
+  if (options?.fit) params.append("fit", "true");
+  if (options?.paper) params.append("paper", options.paper);
+  if (options?.landscape) params.append("landscape", "true");
 
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
