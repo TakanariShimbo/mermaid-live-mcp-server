@@ -74,7 +74,7 @@ export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
 /**
  * Validates
  */
-export function validateDiagram(diagram: string): void {
+function validateDiagram(diagram: string): void {
   if (!diagram || typeof diagram !== "string" || diagram.trim().length === 0) {
     throw new McpError(
       ErrorCode.InvalidParams,
@@ -83,7 +83,7 @@ export function validateDiagram(diagram: string): void {
   }
 }
 
-export function validateFormat(format: string): void {
+function validateFormat(format: string): void {
   const validFormats = ["png", "jpeg", "webp", "svg", "pdf"];
   if (!validFormats.includes(format)) {
     throw new McpError(
@@ -93,7 +93,7 @@ export function validateFormat(format: string): void {
   }
 }
 
-export function validateAction(action: string): void {
+function validateAction(action: string): void {
   if (!action || typeof action !== "string" || action.trim().length === 0) {
     throw new McpError(
       ErrorCode.InvalidParams,
@@ -109,7 +109,7 @@ export function validateAction(action: string): void {
   }
 }
 
-export function validateOutputPath(
+function validateOutputPath(
   outputPath: string | undefined,
   action: string
 ): void {
@@ -126,7 +126,7 @@ export function validateOutputPath(
   }
 }
 
-export function validateDimensions(width?: number, height?: number): void {
+function validateDimensions(width?: number, height?: number): void {
   if (width !== undefined) {
     if (!Number.isInteger(width) || width <= 0 || width > 10000) {
       throw new McpError(
@@ -145,7 +145,7 @@ export function validateDimensions(width?: number, height?: number): void {
   }
 }
 
-export function validateScale(scale?: number): void {
+function validateScale(scale?: number): void {
   if (scale !== undefined) {
     if (typeof scale !== "number" || scale <= 0 || scale > 10) {
       throw new McpError(
@@ -156,7 +156,7 @@ export function validateScale(scale?: number): void {
   }
 }
 
-export function validateBgColor(bgColor?: string): void {
+function validateBgColor(bgColor?: string): void {
   if (bgColor !== undefined) {
     if (typeof bgColor !== "string" || bgColor.trim().length === 0) {
       throw new McpError(
@@ -175,7 +175,7 @@ export function validateBgColor(bgColor?: string): void {
   }
 }
 
-export function validatePdfOptions(
+function validatePdfOptions(
   fit?: boolean,
   paper?: string,
   landscape?: boolean
@@ -202,7 +202,7 @@ export function validatePdfOptions(
   }
 }
 
-export function encodeMermaidDiagram(diagram: string): string {
+function encodeMermaidDiagram(diagram: string): string {
   const json = JSON.stringify({ code: diagram });
   const bytes = new TextEncoder().encode(json);
   const zlib = deflate(bytes, { level: 9 });
@@ -223,7 +223,7 @@ function buildFormatUrl(
   } = {}
 ): string {
   const encoded = encodeMermaidDiagram(diagram);
-  
+
   let baseUrl: string;
   switch (format) {
     case "png":
@@ -242,7 +242,7 @@ function buildFormatUrl(
   }
 
   const params = new URLSearchParams();
-  
+
   if (format === "png" || format === "jpeg" || format === "webp") {
     if (format !== "jpeg") {
       params.append("type", format);
@@ -307,26 +307,12 @@ async function fetchMermaidContent(
 
     return response.data;
   } catch (error) {
-    // Log more detailed error information
     const axiosError = error as any;
-    let errorMessage = `Failed to fetch diagram content from ${url}`;
-
-    if (axiosError.response) {
-      errorMessage += ` - Status: ${axiosError.response.status}`;
-      errorMessage += ` - StatusText: ${axiosError.response.statusText}`;
-      if (axiosError.response.data) {
-        const errorData = axiosError.response.data.toString
-          ? axiosError.response.data.toString().substring(0, 200)
-          : String(axiosError.response.data).substring(0, 200);
-        errorMessage += ` - Response: ${errorData}`;
-      }
-    } else if (axiosError.request) {
-      errorMessage += ` - Request failed: ${axiosError.message}`;
-    } else {
-      errorMessage += ` - Error: ${axiosError.message}`;
-    }
-
-    throw new McpError(ErrorCode.InternalError, errorMessage);
+    const message = axiosError.response
+      ? `Failed to fetch diagram content from ${url} - Status: ${axiosError.response.status}`
+      : `Failed to fetch diagram content from ${url} - ${axiosError.message}`;
+    
+    throw new McpError(ErrorCode.InternalError, message);
   }
 }
 
