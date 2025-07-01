@@ -8,7 +8,7 @@ import { MermaidUrls } from "../utils/config.js";
 import { fromUint8Array } from "js-base64";
 
 /**
- * Tool description:
+ * Tool description
  */
 export const CREATE_MERMAID_DIAGRAM_TOOL: Tool = {
   name: "create-mermaid-diagram",
