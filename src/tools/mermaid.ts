@@ -197,17 +197,42 @@ async function fetchMermaidContent(
       responseType: responseType as any,
       timeout: 30000,
       headers: {
-        Accept: format === "svg" ? "image/svg+xml" : "image/*",
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': format === "svg" ? "image/svg+xml,*/*" : "image/*,*/*",
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      validateStatus: function (status) {
+        return status >= 200 && status < 300;
       },
     });
 
     return response.data;
   } catch (error) {
+    // Log more detailed error information
+    const axiosError = error as any;
+    let errorMessage = `Failed to fetch diagram content from ${url}`;
+    
+    if (axiosError.response) {
+      errorMessage += ` - Status: ${axiosError.response.status}`;
+      errorMessage += ` - StatusText: ${axiosError.response.statusText}`;
+      if (axiosError.response.data) {
+        const errorData = axiosError.response.data.toString ? 
+          axiosError.response.data.toString().substring(0, 200) : 
+          String(axiosError.response.data).substring(0, 200);
+        errorMessage += ` - Response: ${errorData}`;
+      }
+    } else if (axiosError.request) {
+      errorMessage += ` - Request failed: ${axiosError.message}`;
+    } else {
+      errorMessage += ` - Error: ${axiosError.message}`;
+    }
+
     throw new McpError(
       ErrorCode.InternalError,
-      `Failed to fetch diagram content: ${
-        error instanceof Error ? error.message : String(error)
-      }`
+      errorMessage
     );
   }
 }
