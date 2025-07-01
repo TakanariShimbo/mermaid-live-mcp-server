@@ -327,53 +327,6 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
     bgColor: args.bgColor,
   });
 
-  let pngData;
-  let pngBase64 = "";
-
-  try {
-    pngData = await fetchMermaidContent(pngUrl, "png");
-    pngBase64 = Buffer.from(pngData).toString("base64");
-  } catch (error) {
-    // Return URLs even if image fetch fails
-    return {
-      content: [
-        {
-          type: "text",
-          text: "⚠️ Failed to fetch diagram image, but URLs were generated successfully:",
-        },
-        {
-          type: "text",
-          text: "Mermaid Live Editor URL:",
-        },
-        {
-          type: "text",
-          text: editUrl,
-        },
-        {
-          type: "text",
-          text: "View-only URL:",
-        },
-        {
-          type: "text",
-          text: viewUrl,
-        },
-        {
-          type: "text",
-          text: `Error: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      ],
-      metadata: {
-        diagramType: "mermaid",
-        generatedAt: new Date().toISOString(),
-        viewUrl: viewUrl,
-        editUrl: editUrl,
-        error: error instanceof Error ? error.message : String(error),
-      },
-    };
-  }
-
   const result: any = {
     content: [
       {
@@ -392,6 +345,20 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
         type: "text",
         text: viewUrl,
       },
+    ],
+    metadata: {
+      diagramType: "mermaid",
+      generatedAt: new Date().toISOString(),
+      viewUrl: viewUrl,
+      editUrl: editUrl,
+    },
+  };
+
+  try {
+    const pngData = await fetchMermaidContent(pngUrl, "png");
+    const pngBase64 = Buffer.from(pngData).toString("base64");
+
+    result.content.push(
       {
         type: "text",
         text: "Below is the PNG image:",
@@ -400,16 +367,21 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
         type: "image",
         data: pngBase64,
         mimeType: "image/png",
-      },
-    ],
-    metadata: {
-      diagramType: "mermaid",
-      generatedAt: new Date().toISOString(),
-      viewUrl: viewUrl,
-      editUrl: editUrl,
-      pngBase64: pngBase64,
-    },
-  };
+      }
+    );
+    result.metadata.pngBase64 = pngBase64;
+  } catch (error) {
+    result.content.unshift({
+      type: "text",
+      text: "⚠️ Failed to fetch diagram image",
+    });
+    result.content.push({
+      type: "text",
+      text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+    });
+    result.metadata.error =
+      error instanceof Error ? error.message : String(error);
+  }
 
   if (action === "get_url") {
     return result;
@@ -429,18 +401,22 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    const url = buildMermaidUrl(diagram, format as "png" | "jpeg" | "webp" | "svg" | "pdf", {
-      width: args.width,
-      height: args.height,
-      scale: args.scale,
-      bgColor: args.bgColor,
-      fit: args.fit,
-      paper: args.paper,
-      landscape: args.landscape,
-    });
-    
+    const url = buildMermaidUrl(
+      diagram,
+      format as "png" | "jpeg" | "webp" | "svg" | "pdf",
+      {
+        width: args.width,
+        height: args.height,
+        scale: args.scale,
+        bgColor: args.bgColor,
+        fit: args.fit,
+        paper: args.paper,
+        landscape: args.landscape,
+      }
+    );
+
     const data = await fetchMermaidContent(url, format);
-    
+
     if (format === "svg") {
       fs.writeFileSync(outputPath, data, "utf8");
     } else {
