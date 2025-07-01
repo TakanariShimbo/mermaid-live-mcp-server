@@ -240,8 +240,50 @@ export async function handleCreateMermaidDiagram(args: any): Promise<any> {
     theme: args.theme,
   });
 
-  const pngData = await fetchMermaidContent(pngUrl, "png");
-  const pngBase64 = Buffer.from(pngData).toString("base64");
+  let pngData;
+  let pngBase64 = "";
+  
+  try {
+    pngData = await fetchMermaidContent(pngUrl, "png");
+    pngBase64 = Buffer.from(pngData).toString("base64");
+  } catch (error) {
+    // Return URLs even if image fetch fails
+    return {
+      content: [
+        {
+          type: "text",
+          text: "⚠️ Failed to fetch diagram image, but URLs were generated successfully:",
+        },
+        {
+          type: "text",
+          text: "Mermaid Live Editor URL:",
+        },
+        {
+          type: "text",
+          text: editUrl,
+        },
+        {
+          type: "text",
+          text: "View-only URL:",
+        },
+        {
+          type: "text",
+          text: viewUrl,
+        },
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+      metadata: {
+        diagramType: "mermaid",
+        generatedAt: new Date().toISOString(),
+        viewUrl: viewUrl,
+        editUrl: editUrl,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
 
   const result: any = {
     content: [
